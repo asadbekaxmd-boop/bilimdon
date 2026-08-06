@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bilimdon — O'quvchilar uchun test platformasi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Caveat:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#0F1B22;
+  --bg-soft:#152530;
+  --bg-softer:#1C303B;
+  --paper:#FBF7EE;
+  --paper-dim:#F1EBDC;
+  --ink:#1C2A2E;
+  --ink-soft:#5B6B6F;
+  --chalk:#F2EFE6;
+  --chalk-dim:#B9C4C2;
+  --gold:#E8B94A;
+  --red:#D6555B;
+  --green:#6FAE8C;
+  --blue:#6FA8D6;
+  --purple:#9E8AC7;
+  --line: rgba(242,239,230,0.14);
+  --radius: 20px;
+  --font-display:'Space Grotesk',sans-serif;
+  --font-body:'Manrope',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --font-chalk:'Caveat',cursive;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  font-family:var(--font-body);
+  background:
+    radial-gradient(circle at 15% 10%, rgba(111,168,214,0.10), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(232,185,74,0.08), transparent 50%),
+    var(--bg);
+  color:var(--chalk);
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+}
+body::before{
+  content:'';
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 42px 42px;
+  opacity:0.35;
+  pointer-events:none;
+  mask-image: radial-gradient(circle at 50% 30%, black, transparent 75%);
+  z-index:0;
+}
+.app{position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column;}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 22px clamp(20px,5vw,56px);
+}
+.brand{display:flex; align-items:center; gap:10px; font-family:var(--font-display); font-weight:700; font-size:1.25rem; letter-spacing:-0.01em;}
+.brand-mark{
+  width:34px; height:34px; border-radius:9px;
+  background:linear-gradient(135deg, var(--gold), var(--red));
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-display); font-weight:700; color:var(--ink); font-size:1.1rem;
+  box-shadow: 0 4px 14px rgba(232,185,74,0.25);
+}
+.user-chip{display:flex; align-items:center; gap:10px; font-size:0.9rem; color:var(--chalk-dim); opacity:0; transition:opacity .3s;}
+.user-chip.show{opacity:1;}
+.user-chip .avatar{width:28px; height:28px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:0.8rem; color:var(--ink);}
+
+/* ---------- Stepper ---------- */
+.stepper{display:flex; align-items:center; justify-content:center; gap:8px; padding: 6px 20px 0; flex-wrap:wrap;}
+.stepper.hidden{display:none;}
+.step-dot{
+  width:8px; height:8px; border-radius:50%; background:rgba(242,239,230,0.18);
+  transition: all .35s ease;
+}
+.step-dot.active{background:var(--gold); width:22px; border-radius:5px;}
+.step-dot.done{background:var(--green);}
+
+/* ---------- Screens ---------- */
+main{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 24px clamp(18px,5vw,56px) 60px;}
+.screen{display:none; width:100%; max-width:920px; animation: rise .5s ease both;}
+.screen.active{display:block;}
+@keyframes rise{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+/* ---------- Hero / Landing ---------- */
+.hero{position:relative; text-align:center; padding: 30px 10px 10px;}
+.doodles{position:absolute; inset:-40px -20px auto -20px; height:340px; pointer-events:none; z-index:0;}
+.doodle{
+  position:absolute; font-family:var(--font-chalk); font-weight:700; color:var(--chalk);
+  opacity:0; animation: chalkIn 1s ease forwards;
+}
+@keyframes chalkIn{ from{opacity:0; transform:translateY(10px) rotate(var(--r,0deg)) scale(0.9);} to{opacity:0.55; transform:translateY(0) rotate(var(--r,0deg)) scale(1);} }
+.d1{top:0; left:2%; font-size:2.6rem; color:var(--blue); --r:-8deg; animation-delay:.1s;}
+.d2{top:12%; right:4%; font-size:2.2rem; color:var(--gold); --r:6deg; animation-delay:.3s;}
+.d3{top:52%; left:8%; font-size:2rem; color:var(--green); --r:4deg; animation-delay:.5s;}
+.d4{top:60%; right:10%; font-size:2.4rem; color:var(--purple); --r:-5deg; animation-delay:.7s;}
+.d5{top:30%; left:45%; font-size:1.8rem; color:var(--red); --r:-3deg; animation-delay:.9s; opacity:0.4 !important;}
+
+.eyebrow{
+  position:relative; z-index:1;
+  display:inline-block; font-family:var(--font-mono); font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase;
+  color:var(--gold); background:rgba(232,185,74,0.1); border:1px solid rgba(232,185,74,0.3);
+  padding:6px 14px; border-radius:100px; margin-bottom:22px;
+}
+h1.title{
+  position:relative; z-index:1;
+  font-family:var(--font-display); font-weight:700; letter-spacing:-0.02em;
+  font-size:clamp(2.2rem, 6vw, 3.6rem); line-height:1.08; margin-bottom:18px;
+}
+h1.title span{color:var(--gold);}
+.subtitle{position:relative; z-index:1; font-size:1.08rem; color:var(--chalk-dim); max-width:560px; margin:0 auto 34px; line-height:1.6;}
+
+.subject-strip{position:relative; z-index:1; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:38px;}
+.subject-pill{
+  font-size:0.82rem; padding:7px 14px; border-radius:100px; border:1px solid var(--line);
+  color:var(--chalk-dim); font-family:var(--font-body); font-weight:600;
+}
+
+/* ---------- Google button ---------- */
+.google-btn{
+  position:relative; z-index:1;
+  display:inline-flex; align-items:center; gap:12px;
+  background:var(--paper); color:var(--ink); border:none; border-radius:14px;
+  padding:15px 28px; font-family:var(--font-body); font-weight:700; font-size:1rem;
+  cursor:pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.google-btn:hover{transform:translateY(-2px); box-shadow:0 14px 36px rgba(0,0,0,0.4);}
+.google-btn:active{transform:translateY(0);}
+.google-btn svg{width:20px; height:20px;}
+
+.note-line{position:relative; z-index:1; margin-top:16px; font-size:0.78rem; color:var(--chalk-dim); opacity:0.7;}
+
+/* ---------- Modal (Google sim) ---------- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(10,15,18,0.72); backdrop-filter: blur(4px);
+  display:none; align-items:center; justify-content:center; z-index:50; padding:20px;
+}
+.modal-overlay.show{display:flex; animation: fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
+.gmodal{
+  background:#fff; color:#202124; border-radius:16px; width:100%; max-width:400px;
+  padding:36px 32px 28px; text-align:center; font-family:'Manrope',sans-serif;
+  box-shadow:0 20px 60px rgba(0,0,0,0.4); animation: pop .25s ease;
+}
+@keyframes pop{ from{transform:scale(0.92); opacity:0;} to{transform:scale(1); opacity:1;} }
+.gmodal svg{width:44px; height:44px; margin-bottom:14px;}
+.gmodal h3{font-size:1.15rem; font-weight:700; margin-bottom:6px;}
+.gmodal p{font-size:0.85rem; color:#5f6368; margin-bottom:22px;}
+.gacc{
+  display:flex; align-items:center; gap:12px; text-align:left; width:100%;
+  border:1px solid #dadce0; border-radius:10px; padding:11px 14px; margin-bottom:10px;
+  background:#fff; cursor:pointer; transition:background .15s ease;
+}
+.gacc:hover{background:#f6f8fc;}
+.gacc .gavatar{width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#6FA8D6,#9E8AC7); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:0.85rem; flex-shrink:0;}
+.gacc .gname{font-size:0.88rem; font-weight:600;}
+.gacc .gmail{font-size:0.76rem; color:#5f6368;}
+.gmodal input{
+  width:100%; border:1px solid #dadce0; border-radius:10px; padding:11px 14px; font-size:0.88rem;
+  margin-bottom:10px; font-family:'Manrope',sans-serif; color:#202124;
+}
+.gmodal input:focus{outline:2px solid #6FA8D6; border-color:transparent;}
+.gmodal-btn{
+  width:100%; background:#1a73e8; color:#fff; border:none; border-radius:10px; padding:12px;
+  font-weight:700; font-size:0.9rem; cursor:pointer; margin-top:6px;
+}
+.gmodal-btn:hover{background:#1662c4;}
+.gmodal-cancel{margin-top:14px; background:none; border:none; color:#5f6368; font-size:0.82rem; cursor:pointer; text-decoration:underline;}
+
+/* ---------- Cards / step layout ---------- */
+.card-panel{background:var(--bg-soft); border:1px solid var(--line); border-radius:24px; padding:clamp(24px,4vw,44px);}
+.step-head{margin-bottom:28px; text-align:center;}
+.step-eyebrow{font-family:var(--font-mono); font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); margin-bottom:10px;}
+.step-title{font-family:var(--font-display); font-weight:700; font-size:clamp(1.5rem,3.6vw,2.1rem); letter-spacing:-0.01em;}
+.step-sub{color:var(--chalk-dim); font-size:0.94rem; margin-top:8px;}
+
+.field{margin-bottom:18px;}
+.field label{display:block; font-size:0.82rem; color:var(--chalk-dim); margin-bottom:7px; font-weight:600;}
+.field input{
+  width:100%; background:var(--bg-softer); border:1.5px solid var(--line); color:var(--chalk);
+  border-radius:12px; padding:14px 16px; font-size:1rem; font-family:var(--font-body);
+  transition:border-color .18s ease;
+}
+.field input:focus{outline:none; border-color:var(--gold);}
+
+.grid-cards{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin-bottom:8px;}
+.opt-card{
+  background:var(--bg-softer); border:1.5px solid var(--line); border-radius:16px; padding:16px 14px;
+  cursor:pointer; text-align:left; transition: all .18s ease; color:var(--chalk);
+  display:flex; flex-direction:column; gap:6px;
+}
+.opt-card:hover{border-color:var(--chalk-dim); transform:translateY(-2px);}
+.opt-card.selected{border-color:var(--sel,var(--gold)); background:rgba(232,185,74,0.08); box-shadow:0 0 0 1px var(--sel,var(--gold)) inset;}
+.opt-card .opt-icon{font-size:1.5rem;}
+.opt-card .opt-label{font-weight:700; font-size:0.95rem; font-family:var(--font-display);}
+.opt-card .opt-meta{font-size:0.74rem; color:var(--chalk-dim);}
+
+.chip-row{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px;}
+.chip{
+  background:var(--bg-softer); border:1.5px solid var(--line); color:var(--chalk);
+  padding:11px 18px; border-radius:100px; cursor:pointer; font-weight:700; font-family:var(--font-mono);
+  font-size:0.92rem; transition:all .16s ease;
+}
+.chip:hover{border-color:var(--chalk-dim);}
+.chip.selected{background:var(--gold); border-color:var(--gold); color:var(--ink);}
+
+.grade-grid{display:grid; grid-template-columns:repeat(11,1fr); gap:8px;}
+@media(max-width:720px){.grade-grid{grid-template-columns:repeat(6,1fr);}}
+.grade-cell{
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  background:var(--bg-softer); border:1.5px solid var(--line); border-radius:12px;
+  cursor:pointer; font-family:var(--font-display); font-weight:700; font-size:1.05rem; color:var(--chalk);
+  transition:all .16s ease;
+}
+.grade-cell:hover{border-color:var(--chalk-dim);}
+.grade-cell.selected{background:var(--blue); border-color:var(--blue); color:var(--ink);}
+.grade-legend{display:flex; gap:18px; justify-content:center; margin-top:14px; font-size:0.76rem; color:var(--chalk-dim); flex-wrap:wrap;}
+.grade-legend span{display:inline-flex; align-items:center; gap:6px;}
+.legend-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
+
+.nav-row{display:flex; justify-content:space-between; align-items:center; margin-top:30px; gap:12px;}
+.btn{
+  font-family:var(--font-body); font-weight:700; font-size:0.95rem; border-radius:12px;
+  padding:13px 26px; cursor:pointer; border:none; transition:all .18s ease;
+}
+.btn-primary{background:var(--gold); color:var(--ink);}
+.btn-primary:hover:not(:disabled){transform:translateY(-2px); box-shadow:0 8px 20px rgba(232,185,74,0.3);}
+.btn-primary:disabled{opacity:0.35; cursor:not-allowed;}
+.btn-ghost{background:transparent; color:var(--chalk-dim); border:1.5px solid var(--line);}
+.btn-ghost:hover{color:var(--chalk); border-color:var(--chalk-dim);}
+
+/* ---------- Ready / summary screen ---------- */
+.summary-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:30px;}
+.sum-item{background:var(--bg-softer); border:1px solid var(--line); border-radius:14px; padding:16px;}
+.sum-item .sum-label{font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--chalk-dim); margin-bottom:6px;}
+.sum-item .sum-value{font-family:var(--font-display); font-weight:700; font-size:1.15rem;}
+
+/* ---------- Quiz screen ---------- */
+.quiz-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:16px; flex-wrap:wrap;}
+.quiz-progress-wrap{flex:1; min-width:180px;}
+.quiz-progress-text{font-size:0.8rem; color:var(--chalk-dim); margin-bottom:6px; font-family:var(--font-mono);}
+.progress-bar{height:6px; background:var(--bg-softer); border-radius:100px; overflow:hidden;}
+.progress-fill{height:100%; background:linear-gradient(90deg,var(--blue),var(--gold)); border-radius:100px; transition:width .3s ease;}
+.timer{
+  font-family:var(--font-mono); font-weight:700; font-size:1.3rem; color:var(--chalk);
+  background:var(--bg-softer); border:1.5px solid var(--line); border-radius:12px; padding:9px 18px;
+  display:flex; align-items:center; gap:8px;
+}
+.timer.low{color:var(--red); border-color:var(--red); animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;} 50%{opacity:0.55;}}
+
+.question-card{background:var(--paper); color:var(--ink); border-radius:22px; padding:clamp(24px,4vw,40px); min-height:280px;}
+.q-tag{display:inline-block; font-family:var(--font-mono); font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:#fff; background:var(--sel,var(--blue)); padding:5px 12px; border-radius:100px; margin-bottom:16px;}
+.q-text{font-family:var(--font-display); font-weight:600; font-size:clamp(1.15rem,2.6vw,1.5rem); line-height:1.4; margin-bottom:26px;}
+.q-options{display:grid; gap:12px;}
+.q-opt{
+  display:flex; align-items:center; gap:14px; text-align:left;
+  background:#fff; border:1.5px solid #E4DFD0; border-radius:14px; padding:15px 18px;
+  cursor:pointer; font-family:var(--font-body); font-weight:600; font-size:0.98rem; color:var(--ink);
+  transition:all .15s ease;
+}
+.q-opt:hover{border-color:var(--ink-soft);}
+.q-opt .q-letter{
+  width:28px; height:28px; border-radius:8px; background:var(--paper-dim); display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-mono); font-weight:700; font-size:0.82rem; flex-shrink:0; color:var(--ink-soft);
+}
+.q-opt.chosen{border-color:var(--blue); background:rgba(111,168,214,0.1);}
+.q-opt.chosen .q-letter{background:var(--blue); color:#fff;}
+
+.quiz-nav{display:flex; justify-content:space-between; margin-top:24px;}
+
+/* ---------- Results screen ---------- */
+.result-hero{text-align:center; margin-bottom:36px;}
+.donut-wrap{position:relative; width:200px; height:200px; margin:0 auto 20px;}
+.donut-wrap svg{width:100%; height:100%; transform:rotate(-90deg);}
+.donut-center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+.donut-pct{font-family:var(--font-display); font-weight:700; font-size:2.3rem;}
+.donut-label{font-size:0.76rem; color:var(--chalk-dim); text-transform:uppercase; letter-spacing:0.08em;}
+.result-msg{font-family:var(--font-display); font-weight:600; font-size:1.3rem; margin-bottom:8px;}
+.result-sub{color:var(--chalk-dim); font-size:0.95rem;}
+
+.stat-row{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; max-width:520px; margin:26px auto 0;}
+.stat-box{background:var(--bg-softer); border:1px solid var(--line); border-radius:14px; padding:16px; text-align:center;}
+.stat-box .stat-num{font-family:var(--font-display); font-weight:700; font-size:1.5rem;}
+.stat-box .stat-lbl{font-size:0.72rem; color:var(--chalk-dim); text-transform:uppercase; letter-spacing:0.06em; margin-top:4px;}
+.stat-box.correct .stat-num{color:var(--green);}
+.stat-box.wrong .stat-num{color:var(--red);}
+
+.review-list{margin-top:36px; display:flex; flex-direction:column; gap:10px;}
+.review-item{background:var(--bg-soft); border:1px solid var(--line); border-radius:14px; padding:16px 18px;}
+.review-item.wrong{border-left:3px solid var(--red);}
+.review-item.right{border-left:3px solid var(--green);}
+.review-q{font-weight:700; font-size:0.92rem; margin-bottom:8px;}
+.review-ans{font-size:0.85rem; color:var(--chalk-dim); line-height:1.6;}
+.review-ans b.ok{color:var(--green);}
+.review-ans b.no{color:var(--red);}
+
+.result-actions{display:flex; gap:12px; justify-content:center; margin-top:32px; flex-wrap:wrap;}
+
+footer{text-align:center; padding:20px; font-size:0.76rem; color:var(--chalk-dim); opacity:0.55;}
+
+@media(max-width:560px){
+  .grid-cards{grid-template-columns:repeat(2,1fr);}
+  .stat-row{grid-template-columns:1fr 1fr 1fr; gap:8px;}
+  .nav-row{flex-direction:column-reverse;}
+  .nav-row .btn{width:100%;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand"><div class="brand-mark">B</div>Bilimdon</div>
+    <div class="user-chip" id="userChip"><div class="avatar" id="userAvatar">?</div><span id="userChipName"></span></div>
+  </div>
+
+  <div class="stepper hidden" id="stepper"></div>
+
+  <main>
+
+    <!-- SCREEN 0: Landing -->
+    <section class="screen active" id="screen-landing">
+      <div class="hero">
+        <div class="doodles">
+          <div class="doodle d1">π</div>
+          <div class="doodle d2">H₂O</div>
+          <div class="doodle d3">ABC</div>
+          <div class="doodle d4">1991</div>
+          <div class="doodle d5">∑</div>
+        </div>
+        <div class="eyebrow">Sinf 1 – 11 uchun test platformasi</div>
+        <h1 class="title">Bilimingizni <span>sinab ko'ring</span>,<br>natijangizni darhol bilib oling</h1>
+        <p class="subtitle">Fanni tanlang, sinfingizga mos qiyinlikda savollarga javob bering — vaqt va savollar sonini o'zingiz belgilaysiz. Test tugagach, ballingiz avtomatik chiqadi.</p>
+        <div class="subject-strip" id="subjectStrip"></div>
+
+        <div id="gsiButtonContainer" style="position:relative; z-index:1; display:flex; justify-content:center; min-height:46px;"></div>
+
+        <div class="note-line" id="gsiSetupNotice" style="display:none;">
+          ⚠️ Google kirish hali sozlanmagan. Pastdagi "Sozlash bo'yicha yo'riqnoma"ni o'qing —
+          shu paytgacha <button class="gmodal-cancel" style="text-decoration:underline; cursor:pointer;" id="demoLoginLink">demo tarzda kirish</button> mumkin.
+        </div>
+        <div class="note-line" id="gsiReadyNotice" style="display:none;">Google hisobingiz bilan xavfsiz kiring.</div>
+      </div>
+    </section>
+
+    <!-- SCREEN 1: Ism familiya -->
+    <section class="screen" id="screen-profile">
+      <div class="card-panel">
+        <div class="step-head">
+          <div class="step-eyebrow">Qadam 1 / 5</div>
+          <div class="step-title">O'zingiz haqingizda</div>
+          <div class="step-sub">Ism va familiyangizni kiriting</div>
+        </div>
+        <div class="field"><label>Ism</label><input type="text" id="inputIsm" placeholder="Masalan: Asadbek"></div>
+        <div class="field"><label>Familiya</label><input type="text" id="inputFamiliya" placeholder="Masalan: Axmadjanov"></div>
+        <div class="nav-row">
+          <span></span>
+          <button class="btn btn-primary" id="btnProfileNext" disabled>Davom etish →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: Fan tanlash -->
+    <section class="screen" id="screen-subject">
+      <div class="card-panel">
+        <div class="step-head">
+          <div class="step-eyebrow">Qadam 2 / 5</div>
+          <div class="step-title">Qaysi fandan sinov topshirasiz?</div>
+          <div class="step-sub">Bitta fanni tanlang</div>
+        </div>
+        <div class="grid-cards" id="subjectCards"></div>
+        <div class="nav-row">
+          <button class="btn btn-ghost" data-back="screen-profile">← Orqaga</button>
+          <button class="btn btn-primary" id="btnSubjectNext" disabled>Davom etish →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: Sinf -->
+    <section class="screen" id="screen-grade">
+      <div class="card-panel">
+        <div class="step-head">
+          <div class="step-eyebrow">Qadam 3 / 5</div>
+          <div class="step-title">Nechanchi sinfda o'qiysiz?</div>
+          <div class="step-sub">Savollar qiyinligi sinfingizga moslashadi</div>
+        </div>
+        <div class="grade-grid" id="gradeGrid"></div>
+        <div class="grade-legend">
+          <span><i class="legend-dot" style="background:var(--green)"></i>1–4 sinf: oson</span>
+          <span><i class="legend-dot" style="background:var(--blue)"></i>5–8 sinf: o'rtacha</span>
+          <span><i class="legend-dot" style="background:var(--red)"></i>9–11 sinf: qiyin</span>
+        </div>
+        <div class="nav-row">
+          <button class="btn btn-ghost" data-back="screen-subject">← Orqaga</button>
+          <button class="btn btn-primary" id="btnGradeNext" disabled>Davom etish →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: Vaqt -->
+    <section class="screen" id="screen-duration">
+      <div class="card-panel">
+        <div class="step-head">
+          <div class="step-eyebrow">Qadam 4 / 5</div>
+          <div class="step-title">Test uchun qancha vaqt kerak?</div>
+          <div class="step-sub">5 daqiqadan 2 soatgacha tanlashingiz mumkin</div>
+        </div>
+        <div class="chip-row" id="durationChips"></div>
+        <div class="nav-row">
+          <button class="btn btn-ghost" data-back="screen-grade">← Orqaga</button>
+          <button class="btn btn-primary" id="btnDurationNext" disabled>Davom etish →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 5: Savollar soni -->
+    <section class="screen" id="screen-count">
+      <div class="card-panel">
+        <div class="step-head">
+          <div class="step-eyebrow">Qadam 5 / 5</div>
+          <div class="step-title">Nechta savol bo'lsin?</div>
+          <div class="step-sub">5 tadan 30 tagacha savol tanlang</div>
+        </div>
+        <div class="chip-row" id="countChips"></div>
+        <div class="nav-row">
+          <button class="btn btn-ghost" data-back="screen-duration">← Orqaga</button>
+          <button class="btn btn-primary" id="btnCountNext" disabled>Davom etish →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 6: Ready -->
+    <section class="screen" id="screen-ready">
+      <div class="card-panel">
+        <div class="step-head">
+          <div class="step-eyebrow">Tayyor</div>
+          <div class="step-title" id="readyTitle">Test boshlashga tayyormisiz?</div>
+          <div class="step-sub">Sozlamalaringizni tekshirib chiqing</div>
+        </div>
+        <div class="summary-grid" id="summaryGrid"></div>
+        <div class="nav-row">
+          <button class="btn btn-ghost" data-back="screen-count">← Orqaga</button>
+          <button class="btn btn-primary" id="btnStartQuiz">Testni boshlash 🚀</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 7: Quiz -->
+    <section class="screen" id="screen-quiz">
+      <div class="quiz-top">
+        <div class="quiz-progress-wrap">
+          <div class="quiz-progress-text" id="quizProgressText">Savol 1 / 10</div>
+          <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        </div>
+        <div class="timer" id="timerBox">⏱ <span id="timerText">00:00</span></div>
+      </div>
+      <div class="question-card" id="questionCard"></div>
+      <div class="quiz-nav">
+        <button class="btn btn-ghost" id="btnPrevQ" disabled>← Oldingi</button>
+        <button class="btn btn-primary" id="btnNextQ" disabled>Keyingi →</button>
+      </div>
+    </section>
+
+    <!-- SCREEN 8: Results -->
+    <section class="screen" id="screen-results">
+      <div class="result-hero">
+        <div class="donut-wrap">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(242,239,230,0.12)" stroke-width="12"/>
+            <circle cx="60" cy="60" r="52" fill="none" id="donutFg" stroke="var(--gold)" stroke-width="12" stroke-linecap="round" stroke-dasharray="327" stroke-dashoffset="327"/>
+          </svg>
+          <div class="donut-center">
+            <div class="donut-pct" id="donutPct">0%</div>
+            <div class="donut-label">Natija</div>
+          </div>
+        </div>
+        <div class="result-msg" id="resultMsg"></div>
+        <div class="result-sub" id="resultSub"></div>
+        <div class="stat-row">
+          <div class="stat-box correct"><div class="stat-num" id="statCorrect">0</div><div class="stat-lbl">To'g'ri</div></div>
+          <div class="stat-box wrong"><div class="stat-num" id="statWrong">0</div><div class="stat-lbl">Xato</div></div>
+          <div class="stat-box"><div class="stat-num" id="statTime">0:00</div><div class="stat-lbl">Sarflangan vaqt</div></div>
+        </div>
+      </div>
+      <div class="review-list" id="reviewList"></div>
+      <div class="result-actions">
+        <button class="btn btn-ghost" id="btnRetrySame">🔁 Shu fandan qayta urinish</button>
+        <button class="btn btn-primary" id="btnNewTest">✨ Yangi test boshlash</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>Bilimdon — 1–11 sinf o'quvchilari uchun test platformasi (demo)</footer>
+</div>
+
+<!-- Google sign-in simulation modal -->
+<div class="modal-overlay" id="googleModal">
+  <div class="gmodal">
+    <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.2-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.6 6.1 29.6 4 24 4 16.1 4 9.3 8.5 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-2.1 14.1-5.5l-6.5-5.5C29.5 34.7 26.9 35.7 24 35.7c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.2 39.4 16.1 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.3-4.2 5.7l6.5 5.5C40.5 36.6 44 30.9 44 24c0-1.2-.1-2.3-.4-3.5z"/></svg>
+    <h3>Hisobni tanlang</h3>
+    <p>Bilimdon-ga kirish uchun davom eting</p>
+    <div id="gAccList"></div>
+    <div id="gAddForm" style="display:none;">
+      <input type="text" id="gNameInput" placeholder="To'liq ismingiz">
+      <input type="email" id="gEmailInput" placeholder="Email manzil">
+      <button class="gmodal-btn" id="gConfirmBtn">Davom etish</button>
+    </div>
+    <button class="gmodal-cancel" id="gAddAccountBtn">Boshqa hisob qo'shish</button>
+  </div>
+</div>
+
+<script>
+// ============================= DATA =============================
+const SUBJECTS = [
+  {id:'math', name:'Matematika', icon:'📐', color:'var(--blue)'},
+  {id:'english', name:'Ingliz tili', icon:'🔤', color:'var(--gold)'},
+  {id:'computer', name:'Kompyuter savodxonligi', icon:'💻', color:'var(--purple)'},
+  {id:'chemistry', name:'Kimyo', icon:'⚗️', color:'var(--green)'},
+  {id:'biology', name:'Biologiya', icon:'🧬', color:'#7FC9A4'},
+  {id:'russian', name:'Rus tili', icon:'📖', color:'var(--red)'},
+  {id:'geography', name:'Geografiya', icon:'🌍', color:'#E0965C'},
+  {id:'history', name:'Tarix', icon:'🏛️', color:'#C7A76F'},
+];
+const DURATIONS = [5,10,15,20,25,30,45,60,90,120];
+const COUNTS = [5,10,15,20,25,30];
+
+const BANK = {
+english: [
+ {q:"\"Kitob\" so'zining inglizcha tarjimasi qaysi?", o:["Book","Table","Pen","Door"], c:0, d:"easy"},
+ {q:"\"Uy\" so'zining inglizcha tarjimasi qaysi?", o:["House","Car","Tree","Sky"], c:0, d:"easy"},
+ {q:"\"Non\" so'zi inglizchada qanday bo'ladi?", o:["Bread","Milk","Water","Meat"], c:0, d:"easy"},
+ {q:"\"Salom!\" iborasining inglizcha muqobili?", o:["Hello","Goodbye","Please","Sorry"], c:0, d:"easy"},
+ {q:"\"Rahmat\" so'zining inglizcha tarjimasi?", o:["Thank you","Sorry","Please","Yes"], c:0, d:"easy"},
+ {q:"Qaysi gap grammatik jihatdan to'g'ri?", o:["She go to school","She goes to school","She going school","She gone to school"], c:1, d:"medium"},
+ {q:"\"Child\" so'zining ko'plik shakli qaysi?", o:["Childs","Children","Childes","Child's"], c:1, d:"medium"},
+ {q:"To'g'ri variantni tanlang: \"I ___ a student.\"", o:["is","are","am","be"], c:2, d:"medium"},
+ {q:"\"Go\" fe'lining o'tgan zamon shakli qaysi?", o:["Goed","Gone","Went","Going"], c:2, d:"medium"},
+ {q:"Qaysi so'z sifat (adjective) hisoblanadi?", o:["Quickly","Beautiful","Run","House"], c:1, d:"medium"},
+ {q:"To'g'ri shart gapni tanlang: \"If it rains, I ___ stay home.\"", o:["will","would","won't","had"], c:0, d:"hard"},
+ {q:"\"They built the house.\" gapining majhul nisbatdagi (passive) shakli?", o:["The house was built by them.","The house build by them.","The house is built them.","The house built by they."], c:0, d:"hard"},
+ {q:"\"Happy\" so'ziga sinonim bo'lgan so'zni tanlang.", o:["Sad","Joyful","Angry","Tired"], c:1, d:"hard"},
+ {q:"To'g'ri ko'chirma gapni tanlang: He said, \"I am tired.\"", o:["He said he was tired.","He said he is tired.","He said I was tired.","He said he tired."], c:0, d:"hard"},
+ {q:"To'g'ri variantni tanlang: \"Neither of the answers ___ correct.\"", o:["is","are","was","were"], c:0, d:"hard"},
+ {q:"\"Maktab\" so'zining inglizcha tarjimasi qaysi?", o:["School","Hospital","Market","Park"], c:0, d:"easy"},
+ {q:"\"Do'st\" so'zining inglizcha tarjimasi qaysi?", o:["Friend","Enemy","Teacher","Brother"], c:0, d:"easy"},
+ {q:"\"Bugun\" so'zining inglizcha tarjimasi qaysi?", o:["Today","Yesterday","Tomorrow","Now"], c:0, d:"easy"},
+ {q:"\"Suv\" so'zining inglizcha tarjimasi qaysi?", o:["Water","Fire","Air","Earth"], c:0, d:"easy"},
+ {q:"\"Onam\" so'zining inglizcha tarjimasi qaysi?", o:["Mother","Father","Sister","Brother"], c:0, d:"easy"},
+ {q:"To'g'ri savol shaklini tanlang: \"___ you like tea?\"", o:["Do","Does","Are","Is"], c:0, d:"medium"},
+ {q:"\"Big\" so'zining antonimi (qarama-qarshi ma'nosi) qaysi?", o:["Small","Tall","Long","Wide"], c:0, d:"medium"},
+ {q:"To'g'ri predlogni tanlang: \"The book is ___ the table.\"", o:["on","under","behind","between"], c:0, d:"medium"},
+ {q:"To'g'ri variantni tanlang: \"There ___ three books on the table.\"", o:["are","is","be","was"], c:0, d:"medium"},
+ {q:"Quyidagi so'zlardan qaysi biri fe'l emas?", o:["Table","Run","Jump","Swim"], c:0, d:"medium"},
+ {q:"To'g'ri gapni tanlang: \"By next year, I ___ my studies.\"", o:["will have finished","will finish","finished","have finished"], c:0, d:"hard"},
+ {q:"\"Although it was raining, we went outside.\" gapida \"although\" so'zi qanday ma'noni bildiradi?", o:["Qarshilik (garchi)","Sabab","Vaqt","Shart"], c:0, d:"hard"},
+ {q:"To'g'ri modal fe'lni tanlang: \"You ___ see a doctor if you feel sick.\"", o:["should","can","will","do"], c:0, d:"hard"},
+ {q:"To'g'ri qiyoslash (comparative) shaklini tanlang: \"This book is ___ than that one.\"", o:["more interesting","interestinger","most interesting","interesting"], c:0, d:"hard"},
+ {q:"Qaysi gap artikldan to'g'ri foydalangan?", o:["She is an engineer.","She is a engineer.","She is engineer.","She engineer is."], c:0, d:"hard"},
+],
+computer: [
+ {q:"Kompyuterning \"miyasi\" deb nima ataladi?", o:["CPU","Monitor","Klaviatura","Sichqoncha"], c:0, d:"easy"},
+ {q:"Fayllarni doimiy saqlash uchun qanday qurilma ishlatiladi?", o:["Qattiq disk (xotira)","Printer","Skaner","Monitor"], c:0, d:"easy"},
+ {q:"Internetga ulanish uchun qaysi qurilma kerak bo'ladi?", o:["Router","Printer","Skaner","Klaviatura"], c:0, d:"easy"},
+ {q:"Matn hujjatlari bilan ishlash uchun qaysi dastur ishlatiladi?", o:["Microsoft Word","Excel","PowerPoint","Paint"], c:0, d:"easy"},
+ {q:"Sichqoncha (mouse) asosan nima uchun ishlatiladi?", o:["Kursorni boshqarish","Ovoz chiqarish","Rasm chop etish","Internetga ulanish"], c:0, d:"easy"},
+ {q:"\"WWW\" qisqartmasi nimani anglatadi?", o:["World Wide Web","World Web Wide","Wide World Web","Web World Wide"], c:0, d:"medium"},
+ {q:"\".jpg\" fayl kengaytmasi qaysi turdagi faylga tegishli?", o:["Rasm","Matn","Video","Musiqa"], c:0, d:"medium"},
+ {q:"Excel dasturi asosan nima uchun ishlatiladi?", o:["Jadval va hisob-kitoblar","Rasm chizish","Video montaj","Musiqa yozish"], c:0, d:"medium"},
+ {q:"Kompyuterdagi RAM xotirasining vazifasi nima?", o:["Vaqtinchalik ma'lumot saqlash","Doimiy ma'lumot saqlash","Internetga ulanish","Ovoz chiqarish"], c:0, d:"medium"},
+ {q:"Qaysi biri qidiruv tizimi hisoblanadi?", o:["Google","Word","Excel","Paint"], c:0, d:"medium"},
+ {q:"Kompyuter viruslaridan himoyalanish uchun nima ishlatiladi?", o:["Antivirus dastur","Brauzer","Printer","Skaner"], c:0, d:"hard"},
+ {q:"\"Algoritm\" tushunchasi nimani anglatadi?", o:["Masalani yechish uchun aniq qadamlar ketma-ketligi","Kompyuter qurilmasi turi","Internet tezligi","Fayl formati"], c:0, d:"hard"},
+ {q:"Ikkilik (binary) sanoq sistemasida nechta raqam ishlatiladi?", o:["2","10","8","16"], c:0, d:"hard"},
+ {q:"HTML tili nima uchun ishlatiladi?", o:["Veb-sahifalar yaratish","Rasm tahrirlash","Video montaj","Ovoz yozish"], c:0, d:"hard"},
+ {q:"Bulutli xotira (cloud storage) nima?", o:["Internet orqali ma'lumot saqlash xizmati","Kompyuter ichidagi disk turi","Printer turi","Dasturlash tili"], c:0, d:"hard"},
+ {q:"Printer nima uchun ishlatiladi?", o:["Hujjatlarni qog'ozga chop etish","Rasm chizish","Internetga ulanish","Ovoz yozish"], c:0, d:"easy"},
+ {q:"Klaviatura nima uchun ishlatiladi?", o:["Matn kiritish","Rasm ko'rish","Ovoz eshitish","Internetga ulanish"], c:0, d:"easy"},
+ {q:"Monitor qanday vazifani bajaradi?", o:["Ma'lumotlarni ekranda ko'rsatish","Ma'lumot saqlash","Ovoz chiqarish","Internetga ulash"], c:0, d:"easy"},
+ {q:"Fayllarni tartibga solish uchun asosan nima ishlatiladi?", o:["Papkalar (folder)","Printer","Skaner","Router"], c:0, d:"easy"},
+ {q:"Kompyuterni yoqish/o'chirish uchun ishlatiladigan tugma qanday ataladi?", o:["Power tugmasi","Enter tugmasi","Shift tugmasi","Tab tugmasi"], c:0, d:"easy"},
+ {q:"PowerPoint dasturi nima uchun ishlatiladi?", o:["Taqdimot (prezentatsiya) tayyorlash","Jadval tuzish","Video montaj","Rasm chizish"], c:0, d:"medium"},
+ {q:"\"Copy\" va \"Paste\" amallari nima uchun ishlatiladi?", o:["Nusxa ko'chirish va joylashtirish","Faylni o'chirish","Faylni saqlash","Faylni yopish"], c:0, d:"medium"},
+ {q:"Elektron pochta (email) nima uchun ishlatiladi?", o:["Xabar yuborish va qabul qilish","Rasm chizish","Video ko'rish","Musiqa tinglash"], c:0, d:"medium"},
+ {q:"USB flesh-disk nima uchun ishlatiladi?", o:["Ma'lumot tashish va saqlash","Internetga ulanish","Ovoz kuchaytirish","Rasm chop etish"], c:0, d:"medium"},
+ {q:"Quyidagilardan qaysi biri brauzer (browser) dasturiga misol bo'ladi?", o:["Google Chrome","Microsoft Word","Adobe Photoshop","VLC Player"], c:0, d:"medium"},
+ {q:"Quyidagilardan qaysi biri operatsion tizimga misol bo'ladi?", o:["Windows","Word","Excel","Chrome"], c:0, d:"hard"},
+ {q:"Fayl kengaytmasi (masalan, .docx, .xlsx) nimani bildiradi?", o:["Fayl turini","Fayl hajmini","Fayl nomini","Fayl sanasini"], c:0, d:"hard"},
+ {q:"Ma'lumotlar bazasi (database) nima uchun ishlatiladi?", o:["Katta hajmdagi ma'lumotlarni saqlash va boshqarish","Rasm chizish","Video montaj","Musiqa yozish"], c:0, d:"hard"},
+ {q:"Wi-Fi nima?", o:["Simsiz internet ulanish texnologiyasi","Kompyuter dasturi","Fayl formati","Printer turi"], c:0, d:"hard"},
+ {q:"Quyidagilardan qaysi biri dasturlash tiliga misol bo'ladi?", o:["Python","JPG","PDF","MP3"], c:0, d:"hard"},
+],
+chemistry: [
+ {q:"Suvning kimyoviy formulasi qaysi?", o:["H2O","CO2","O2","NaCl"], c:0, d:"easy"},
+ {q:"Havodagi eng ko'p miqdordagi gaz qaysi?", o:["Azot","Kislorod","Vodorod","Geliy"], c:0, d:"easy"},
+ {q:"Osh tuzining kimyoviy nomi qaysi?", o:["Natriy xlorid","Kaliy oksid","Temir sulfat","Kaltsiy karbonat"], c:0, d:"easy"},
+ {q:"Metallarning umumiy xossasi qaysi?", o:["Elektr o'tkazish","Suvda erish","Rangsiz bo'lish","Yengil bo'lish"], c:0, d:"easy"},
+ {q:"Yonish jarayonida qaysi gaz ishtirok etadi?", o:["Kislorod","Azot","Vodorod","Geliy"], c:0, d:"easy"},
+ {q:"Davriy jadvalni kim yaratgan?", o:["D.I.Mendeleyev","A.Eynshteyn","I.Nyuton","M.Lomonosov"], c:0, d:"medium"},
+ {q:"Kislotalarning umumiy xossasi qaysi?", o:["Nordon ta'm","Shirin ta'm","Rangsizlik","Qattiqlik"], c:0, d:"medium"},
+ {q:"Vodorodning atom raqami nechaga teng?", o:["1","2","6","8"], c:0, d:"medium"},
+ {q:"CO2 gazi qanday nomlanadi?", o:["Karbonat angidrid","Kislorod","Azot","Metan"], c:0, d:"medium"},
+ {q:"Eritmalarda suv ko'pincha qanday rol o'ynaydi?", o:["Erituvchi","Erigan modda","Katalizator","Cho'kma"], c:0, d:"medium"},
+ {q:"Quyidagilardan qaysi biri kimyoviy reaksiya tezligiga ta'sir qilmaydi?", o:["Idishning rangi","Harorat","Konsentratsiya","Katalizator"], c:0, d:"hard"},
+ {q:"Oksidlanish jarayoni nima?", o:["Elektron yo'qotish","Elektron olish","Proton yo'qotish","Neytron olish"], c:0, d:"hard"},
+ {q:"Metan gazining kimyoviy formulasi qaysi?", o:["CH4","C2H6","CO2","NH3"], c:0, d:"hard"},
+ {q:"pH shkalasi nimani o'lchaydi?", o:["Muhitning kislotalilik darajasini","Haroratni","Bosimni","Zichlikni"], c:0, d:"hard"},
+ {q:"Yer qobig'ida eng ko'p tarqalgan metall qaysi?", o:["Alyuminiy","Oltin","Kumush","Platina"], c:0, d:"hard"},
+ {q:"Muz - suvning qaysi holati hisoblanadi?", o:["Qattiq holat","Suyuq holat","Gaz holat","Plazma holat"], c:0, d:"easy"},
+ {q:"Kislorodning kimyoviy belgisi qaysi?", o:["O","K","C","N"], c:0, d:"easy"},
+ {q:"Temirning kimyoviy belgisi qaysi?", o:["Fe","Te","Fr","Ti"], c:0, d:"easy"},
+ {q:"Shakar suvda qanday xossaga ega?", o:["Eriydi","Erimaydi","Yonadi","Muzlaydi"], c:0, d:"easy"},
+ {q:"Yong'inni o'chirishda asosan qaysi modda ishlatiladi?", o:["Suv","Benzin","Yog'","Spirt"], c:0, d:"easy"},
+ {q:"Aralashma va toza modda orasidagi farq nimada?", o:["Aralashma bir necha moddadan tashkil topgan","Aralashma bitta moddadan tashkil topgan","Farqi yo'q","Toza modda erimaydi"], c:0, d:"medium"},
+ {q:"Kimyoviy element deb nimaga aytiladi?", o:["Bir xil atomlardan tashkil topgan modda","Ikki xil moddaning aralashmasi","Suyuqlik turi","Gaz turi"], c:0, d:"medium"},
+ {q:"Natriyning kimyoviy belgisi qaysi?", o:["Na","N","Ni","No"], c:0, d:"medium"},
+ {q:"Qaysi jarayonda suyuqlik gazga aylanadi?", o:["Bug'lanish","Muzlash","Erish","Cho'kish"], c:0, d:"medium"},
+ {q:"Asoslarning umumiy xossasi qaysi?", o:["Sovunsimon ta'm","Nordon ta'm","Shirin ta'm","Rangsizlik"], c:0, d:"medium"},
+ {q:"Molyar massa nimani bildiradi?", o:["1 mol moddaning massasini","1 gramm moddaning hajmini","Moddaning zichligini","Moddaning haroratini"], c:0, d:"hard"},
+ {q:"Kimyoviy bog'lanishning asosiy turlariga nima kiradi?", o:["Ion va kovalent bog'lanish","Faqat ion bog'lanish","Faqat kovalent bog'lanish","Magnit bog'lanish"], c:0, d:"hard"},
+ {q:"Ammiakning kimyoviy formulasi qaysi?", o:["NH3","NH4","N2H4","NO3"], c:0, d:"hard"},
+ {q:"Galogenlar davriy jadvalning qaysi guruhiga kiradi?", o:["VII guruh","I guruh","VIII guruh","IV guruh"], c:0, d:"hard"},
+ {q:"Elektrolitik dissotsiatsiya nima?", o:["Moddaning suvda ionlarga parchalanishi","Moddaning yonishi","Moddaning erishi","Moddaning bug'lanishi"], c:0, d:"hard"},
+],
+biology: [
+ {q:"Odam tanasida qon aylanishini ta'minlovchi organ qaysi?", o:["Yurak","Jigar","Buyrak","Miya"], c:0, d:"easy"},
+ {q:"O'simliklar qanday oziqlanadi?", o:["Fotosintez orqali","Ovqat yeyish orqali","Nafas olish orqali","Suv ichish orqali"], c:0, d:"easy"},
+ {q:"Odam nafas olishi uchun qaysi organ ishlaydi?", o:["O'pka","Yurak","Jigar","Me'da"], c:0, d:"easy"},
+ {q:"Hayvonlar asosan qanday ikki guruhga bo'linadi?", o:["Umurtqali va umurtqasiz","Katta va kichik","Yashil va sariq","Suvda va quruqda"], c:0, d:"easy"},
+ {q:"Inson tanasining eng katta a'zosi qaysi?", o:["Teri","Yurak","Miya","Jigar"], c:0, d:"easy"},
+ {q:"Fotosintez jarayonida qaysi gaz ajralib chiqadi?", o:["Kislorod","Azot","Vodorod","Karbonat angidrid"], c:0, d:"medium"},
+ {q:"DNK asosan nima uchun javobgar?", o:["Irsiy ma'lumotni saqlash","Qon aylanish","Nafas olish","Ovqat hazm qilish"], c:0, d:"medium"},
+ {q:"Hujayraning \"energiya markazi\" deb nima ataladi?", o:["Mitoxondriya","Yadro","Membrana","Vakuola"], c:0, d:"medium"},
+ {q:"Qaysi organ qonni tozalab, siydik hosil qiladi?", o:["Buyrak","Yurak","O'pka","Me'da"], c:0, d:"medium"},
+ {q:"Kattalar skeletida taxminan nechta suyak bor?", o:["206","150","300","100"], c:0, d:"medium"},
+ {q:"Genetik kasalliklarning asosiy sababi nima?", o:["DNKdagi mutatsiyalar","Ovqatlanish tartibi","Sport qilmaslik","Iqlim sharoiti"], c:0, d:"hard"},
+ {q:"Fermentlar qanday vazifani bajaradi?", o:["Kimyoviy reaksiyalarni tezlashtirish","Energiya saqlash","Qon aylantirish","Nafas oldirish"], c:0, d:"hard"},
+ {q:"Ekosistemadagi energiyaning asosiy manbai nima?", o:["Quyosh","Suv","Tuproq","Havo"], c:0, d:"hard"},
+ {q:"Tanadagi gormonlarni qaysi tizim boshqaradi?", o:["Endokrin tizim","Nafas tizimi","Ayirish tizimi","Tayanch-harakat tizimi"], c:0, d:"hard"},
+ {q:"Tabiiy tanlanish nazariyasini kim yaratgan?", o:["Charlz Darvin","Grigor Mendel","Lui Paster","Isaak Nyuton"], c:0, d:"hard"},
+ {q:"Baliqlar qanday nafas oladi?", o:["Jabralar orqali","O'pka orqali","Teri orqali","Burun orqali"], c:0, d:"easy"},
+ {q:"Ovqatni hazm qilishda qaysi organ asosiy rol o'ynaydi?", o:["Me'da","Yurak","O'pka","Miya"], c:0, d:"easy"},
+ {q:"O'simliklarning ildizi asosan qaysi vazifani bajaradi?", o:["Suv va oziq moddalarni so'rish","Fotosintez qilish","Urug' hosil qilish","Gul ochish"], c:0, d:"easy"},
+ {q:"Qushlar qanday yo'l bilan ko'payadi?", o:["Tuxum qo'yib","Bola tug'ib","Bo'linib","Urug'lanmasdan"], c:0, d:"easy"},
+ {q:"Odam asosan nechta sezgi organiga ega?", o:["5 ta","3 ta","7 ta","10 ta"], c:0, d:"easy"},
+ {q:"Hujayraning nazorat markazi deb nimaga aytiladi?", o:["Yadro","Membrana","Sitoplazma","Vakuola"], c:0, d:"medium"},
+ {q:"Qaysi tizim tananing tayanchi va harakatini ta'minlaydi?", o:["Tayanch-harakat tizimi","Asab tizimi","Qon aylanish tizimi","Ayirish tizimi"], c:0, d:"medium"},
+ {q:"Bakteriyalar qanday organizm hisoblanadi?", o:["Bir hujayrali","Ko'p hujayrali","Hujayrasiz","Faqat o'simlik"], c:0, d:"medium"},
+ {q:"Insonda juftlikda nechta xromosoma bor?", o:["46 ta","23 ta","48 ta","44 ta"], c:0, d:"medium"},
+ {q:"Quyosh nurida terida qaysi vitamin hosil bo'ladi?", o:["D vitamini","C vitamini","A vitamini","B vitamini"], c:0, d:"medium"},
+ {q:"Fotosintez uchun asosan qaysi pigment kerak bo'ladi?", o:["Xlorofill","Gemoglobin","Melanin","Keratin"], c:0, d:"hard"},
+ {q:"Antibiotiklar asosan nimaga qarshi ishlatiladi?", o:["Bakteriyalarga","Viruslarga","Zamburug'larga","Barchasiga"], c:0, d:"hard"},
+ {q:"Immunitet tizimining asosiy vazifasi nima?", o:["Organizmni kasalliklardan himoya qilish","Qon aylantirish","Ovqat hazm qilish","Nafas oldirish"], c:0, d:"hard"},
+ {q:"RNK asosan qaysi jarayonda ishtirok etadi?", o:["Oqsil sintezi","Suyak o'sishi","Qon ivishi","Nafas olish"], c:0, d:"hard"},
+ {q:"Evolyutsiya jarayonida qaysi omil muhim rol o'ynaydi?", o:["Tabiiy tanlanish","Iqlim","Rang","Shakl"], c:0, d:"hard"},
+],
+russian: [
+ {q:"\"Kitob\" so'zining ruscha tarjimasi qaysi?", o:["Книга","Стол","Дом","Ручка"], c:0, d:"easy"},
+ {q:"\"Salom\" so'zi ruschada qanday aytiladi?", o:["Привет","Пока","Спасибо","Извините"], c:0, d:"easy"},
+ {q:"\"Rahmat\" so'zi ruschada qanday aytiladi?", o:["Спасибо","Привет","Да","Нет"], c:0, d:"easy"},
+ {q:"\"Uy\" so'zining ruscha tarjimasi qaysi?", o:["Дом","Кот","Стол","Окно"], c:0, d:"easy"},
+ {q:"\"Ha\" so'zining ruscha muqobili qaysi?", o:["Да","Нет","Может быть","Привет"], c:0, d:"easy"},
+ {q:"\"Men o'qiyapman\" jumlasining to'g'ri ruscha tarjimasi qaysi?", o:["Я читаю","Я читал","Ты читаешь","Он читает"], c:0, d:"medium"},
+ {q:"\"Книга\" so'zining ko'plik shakli qaysi?", o:["Книги","Книгам","Книгой","Книге"], c:0, d:"medium"},
+ {q:"Quyidagi so'zlardan qaysi biri fe'l (glagol) hisoblanadi?", o:["Читать","Стол","Красный","Быстро"], c:0, d:"medium"},
+ {q:"\"Katta\" so'zining ruscha tarjimasi qaysi?", o:["Большой","Маленький","Новый","Старый"], c:0, d:"medium"},
+ {q:"\"Men sizni yaxshi ko'raman\" jumlasining ruscha tarjimasi qaysi?", o:["Я тебя люблю","Я тебя знаю","Я тебя вижу","Я тебя жду"], c:0, d:"medium"},
+ {q:"To'g'ri kelishik shaklini tanlang: \"Я вижу ___\" (kitob)", o:["книгу","книга","книге","книгой"], c:0, d:"hard"},
+ {q:"\"Кто\" so'roq olmoshi nimani anglatadi?", o:["Kim","Nima","Qayer","Qachon"], c:0, d:"hard"},
+ {q:"To'g'ri o'tgan zamon shaklini tanlang: \"он ___\" (читать)", o:["читал","читает","будет читать","читай"], c:0, d:"hard"},
+ {q:"Qaysi jumla grammatik jihatdan to'g'ri?", o:["Я иду в школу","Я идти школа","Я ходить в школу","Я идёт школу"], c:0, d:"hard"},
+ {q:"\"Спасибо большое\" iborasi nimani anglatadi?", o:["Katta rahmat","Salom","Kechirasiz","Xayr"], c:0, d:"hard"},
+ {q:"\"Maktab\" so'zining ruscha tarjimasi qaysi?", o:["Школа","Больница","Магазин","Парк"], c:0, d:"easy"},
+ {q:"\"Do'st\" so'zining ruscha tarjimasi qaysi?", o:["Друг","Враг","Учитель","Брат"], c:0, d:"easy"},
+ {q:"\"Bugun\" so'zining ruscha tarjimasi qaysi?", o:["Сегодня","Вчера","Завтра","Сейчас"], c:0, d:"easy"},
+ {q:"\"Suv\" so'zining ruscha tarjimasi qaysi?", o:["Вода","Огонь","Воздух","Земля"], c:0, d:"easy"},
+ {q:"\"Onam\" so'zining ruscha tarjimasi qaysi?", o:["Мама","Папа","Сестра","Брат"], c:0, d:"easy"},
+ {q:"\"Katta\" so'zining teskarisi (kichik) ruschada qanday aytiladi?", o:["Маленький","Большой","Новый","Старый"], c:0, d:"medium"},
+ {q:"To'g'ri fe'l shaklini tanlang: \"Она ___ книгу.\" (o'qiydi)", o:["читает","читаю","читаешь","читают"], c:0, d:"medium"},
+ {q:"\"Bir necha\" so'zining ruscha tarjimasi qaysi?", o:["Несколько","Один","Два","Много"], c:0, d:"medium"},
+ {q:"\"Yaxshi\" so'zining ruscha tarjimasi qaysi?", o:["Хорошо","Плохо","Быстро","Медленно"], c:0, d:"medium"},
+ {q:"To'g'ri predlogni tanlang: \"Книга ___ столе.\" (stolda)", o:["на","в","у","с"], c:0, d:"medium"},
+ {q:"\"Более\" so'zi qanday ma'noni bildiradi?", o:["Ko'proq","Kamroq","Eng ko'p","Eng kam"], c:0, d:"hard"},
+ {q:"To'g'ri kelishikni tanlang: \"Я говорю ___.\" (do'stim bilan)", o:["с другом","друга","другу","друге"], c:0, d:"hard"},
+ {q:"\"Который час?\" iborasi nimani so'raydi?", o:["Soat nechi?","Qayerdasiz?","Ismingiz nima?","Necha yoshdasiz?"], c:0, d:"hard"},
+ {q:"To'g'ri shaklni tanlang: \"Мы ___ в парке.\" (yurmoqdamiz)", o:["гуляем","гуляю","гуляешь","гуляет"], c:0, d:"hard"},
+ {q:"\"Извините, пожалуйста\" iborasi nimani anglatadi?", o:["Kechirasiz, iltimos","Rahmat, albatta","Salom, do'stim","Xayr, ko'rishguncha"], c:0, d:"hard"},
+],
+geography: [
+ {q:"O'zbekistonning poytaxti qaysi shahar?", o:["Toshkent","Samarqand","Buxoro","Andijon"], c:0, d:"easy"},
+ {q:"Yer sayyorasining taxminan necha foizi suv bilan qoplangan?", o:["70%","30%","50%","90%"], c:0, d:"easy"},
+ {q:"Dunyodagi eng katta okean qaysi?", o:["Tinch okeani","Atlantika okeani","Hind okeani","Shimoliy Muz okeani"], c:0, d:"easy"},
+ {q:"Yer yuzidagi eng katta qit'a qaysi?", o:["Osiyo","Afrika","Yevropa","Avstraliya"], c:0, d:"easy"},
+ {q:"O'zbekistonning milliy valyutasi qanday nomlanadi?", o:["So'm","Dollar","Rubl","Euro"], c:0, d:"easy"},
+ {q:"Dunyodagi eng uzun daryo qaysi hisoblanadi?", o:["Nil daryosi","Amazonka","Yangtszi","Missisipi"], c:0, d:"medium"},
+ {q:"Dunyodagi eng baland tog' tizmasi qaysi?", o:["Himolay","Alp tog'lari","Ural tog'lari","Kavkaz tog'lari"], c:0, d:"medium"},
+ {q:"O'zbekistonda nechta viloyat mavjud?", o:["12","10","14","8"], c:0, d:"medium"},
+ {q:"Sahroi Kabir qaysi qit'ada joylashgan?", o:["Afrika","Osiyo","Avstraliya","Janubiy Amerika"], c:0, d:"medium"},
+ {q:"Yer yuzidagi eng kichik qit'a qaysi?", o:["Avstraliya","Yevropa","Antarktida","Janubiy Amerika"], c:0, d:"medium"},
+ {q:"Orol dengizining qurib ketishiga asosiy sabab nima?", o:["Sug'orish uchun ortiqcha suv olinishi","Iqlim o'zgarishi","Zilzila","Vulqon otilishi"], c:0, d:"hard"},
+ {q:"Ekvator chizig'i quyidagi qit'alarning qaysi biridan o'tmaydi?", o:["Yevropa","Afrika","Janubiy Amerika","Osiyo"], c:0, d:"hard"},
+ {q:"Dunyodagi eng chuqur ko'l qaysi?", o:["Baykal ko'li","Viktoriya ko'li","Kaspiy dengizi","Aral dengizi"], c:0, d:"hard"},
+ {q:"Aholi soni bo'yicha dunyoda birinchi o'rindagi davlat qaysi?", o:["Hindiston","Xitoy","AQSH","Indoneziya"], c:0, d:"hard"},
+ {q:"Tektonik plitalarning harakatiga asosiy sabab nima?", o:["Yer qa'ridagi issiqlik oqimlari","Oyning tortishish kuchi","Shamol","Yomg'ir"], c:0, d:"hard"},
+ {q:"O'zbekistonning eng yirik shahri qaysi?", o:["Toshkent","Samarqand","Andijon","Namangan"], c:0, d:"easy"},
+ {q:"Yer sayyorasi Quyosh atrofida qancha vaqtda bir marta aylanib chiqadi?", o:["1 yilda","1 oyda","1 kunda","1 haftada"], c:0, d:"easy"},
+ {q:"Dunyodagi eng baland tog' cho'qqisi qaysi?", o:["Everest","Elbrus","Kilimanjaro","Mont-Blan"], c:0, d:"easy"},
+ {q:"O'zbekiston qaysi qit'ada joylashgan?", o:["Osiyo","Yevropa","Afrika","Amerika"], c:0, d:"easy"},
+ {q:"Yilning qaysi fasli eng issiq hisoblanadi?", o:["Yoz","Qish","Bahor","Kuz"], c:0, d:"easy"},
+ {q:"Dunyoda aholi eng zich joylashgan qit'a qaysi?", o:["Osiyo","Afrika","Yevropa","Avstraliya"], c:0, d:"medium"},
+ {q:"Amudaryo ilgari asosan qaysi dengizga quyilgan?", o:["Orol dengiziga","Kaspiy dengiziga","Qora dengizga","O'rta yer dengiziga"], c:0, d:"medium"},
+ {q:"Hudud jihatidan dunyodagi eng katta davlat qaysi?", o:["Rossiya","Xitoy","Kanada","AQSH"], c:0, d:"medium"},
+ {q:"Ekvatorga eng yaqin iqlim mintaqasi qanday nomlanadi?", o:["Tropik iqlim","Qutb iqlimi","Mo''tadil iqlim","Cho'l iqlimi"], c:0, d:"medium"},
+ {q:"Hajmi jihatidan dunyodagi eng kichik okean qaysi?", o:["Shimoliy Muz okeani","Tinch okeani","Atlantika okeani","Hind okeani"], c:0, d:"medium"},
+ {q:"Global isish asosan nima sababdan yuzaga kelmoqda?", o:["Issiqxona gazlari chiqindisi","Vulqon otilishi","Oy tortishishi","Yer qiyshiqligi"], c:0, d:"hard"},
+ {q:"Yerni Shimoliy va Janubiy yarim sharlarga bo'luvchi chiziq qanday ataladi?", o:["Ekvator","Grinvich meridiani","Qutb doirasi","Tropik chizig'i"], c:0, d:"hard"},
+ {q:"Dunyodagi eng katta orol qaysi?", o:["Grenlandiya","Madagaskar","Bortiniyo","Yava"], c:0, d:"hard"},
+ {q:"Musson shamollari asosan qaysi hududda kuzatiladi?", o:["Janubiy va Janubi-Sharqiy Osiyo","Shimoliy Yevropa","Markaziy Afrika","G'arbiy Amerika"], c:0, d:"hard"},
+ {q:"Qaysi davlat tarixda \"Quyosh botmaydigan mamlakat\" nomi bilan mashhur bo'lgan?", o:["Britaniya imperiyasi","Fransiya","Ispaniya","Portugaliya"], c:0, d:"hard"},
+],
+history: [
+ {q:"Amir Temur qaysi shaharda tug'ilgan?", o:["Shahrisabz","Samarqand","Buxoro","Xiva"], c:0, d:"easy"},
+ {q:"O'zbekiston qaysi yilda mustaqillikka erishgan?", o:["1991-yil","1985-yil","2000-yil","1917-yil"], c:0, d:"easy"},
+ {q:"Buyuk Ipak yo'li nima uchun mashhur bo'lgan?", o:["Savdo yo'li sifatida","Harbiy yo'l sifatida","Suv yo'li sifatida","Temir yo'l sifatida"], c:0, d:"easy"},
+ {q:"Samarqanddagi mashhur maydon qanday nomlanadi?", o:["Registon","Kreml","Kolizey","Akropol"], c:0, d:"easy"},
+ {q:"Birinchi jahon urushi qaysi yilda boshlangan?", o:["1914-yil","1939-yil","1918-yil","1945-yil"], c:0, d:"easy"},
+ {q:"Amir Temur imperiyasining poytaxti qaysi shahar bo'lgan?", o:["Samarqand","Toshkent","Buxoro","Xiva"], c:0, d:"medium"},
+ {q:"Ikkinchi jahon urushi qaysi yilda tugagan?", o:["1945-yil","1939-yil","1941-yil","1950-yil"], c:0, d:"medium"},
+ {q:"Mirzo Ulug'bek qaysi soha bilan mashhur bo'lgan?", o:["Astronomiya","Harbiy yurishlar","Savdo","Musiqa"], c:0, d:"medium"},
+ {q:"Sovet Ittifoqi qaysi yilda tarqalib ketgan?", o:["1991-yil","1985-yil","2000-yil","1980-yil"], c:0, d:"medium"},
+ {q:"Qadimgi Rim imperiyasi qaysi qit'ada joylashgan bo'lgan?", o:["Yevropa","Osiyo","Afrika","Amerika"], c:0, d:"medium"},
+ {q:"Fransuz inqilobi qaysi yilda boshlangan?", o:["1789-yil","1799-yil","1804-yil","1815-yil"], c:0, d:"hard"},
+ {q:"Buyuk Ipak yo'li qaysi ikki qit'ani bog'lagan?", o:["Osiyo va Yevropa","Afrika va Amerika","Avstraliya va Osiyo","Yevropa va Amerika"], c:0, d:"hard"},
+ {q:"Amir Temur qaysi yilda vafot etgan?", o:["1405-yil","1370-yil","1450-yil","1399-yil"], c:0, d:"hard"},
+ {q:"Qadimgi Misr sivilizatsiyasi qaysi daryo bo'yida rivojlangan?", o:["Nil daryosi","Tigr daryosi","Frot daryosi","Amudaryo"], c:0, d:"hard"},
+ {q:"Berlin devori qaysi yilda qulagan?", o:["1989-yil","1991-yil","1975-yil","2000-yil"], c:0, d:"hard"},
+ {q:"O'zbekiston Respublikasining birinchi Prezidenti kim bo'lgan?", o:["Islom Karimov","Shavkat Mirziyoyev","Nazarboy Rustamov","Islom Abdug'aniyev"], c:0, d:"easy"},
+ {q:"Navro'z bayrami qaysi kunda nishonlanadi?", o:["21-mart","1-yanvar","9-may","1-sentabr"], c:0, d:"easy"},
+ {q:"O'zbekistonda Mustaqillik kuni qaysi sanada nishonlanadi?", o:["1-sentabr","21-mart","9-may","8-dekabr"], c:0, d:"easy"},
+ {q:"Qadimgi odamlar tomonidan kashf etilgan eng muhim narsalardan biri?", o:["Olov","G'ildirak","Yozuv","Temir"], c:0, d:"easy"},
+ {q:"Piramidalar qaysi qadimgi davlatda qurilgan?", o:["Qadimgi Misr","Qadimgi Rim","Qadimgi Yunoniston","Qadimgi Xitoy"], c:0, d:"easy"},
+ {q:"Xorazm Ma'mun akademiyasi qaysi shaharda faoliyat yuritgan?", o:["Xiva","Buxoro","Samarqand","Termiz"], c:0, d:"medium"},
+ {q:"Abu Ali ibn Sino qaysi soha bilan mashhur bo'lgan?", o:["Tibbiyot","Astronomiya","Harbiy ish","Musiqa"], c:0, d:"medium"},
+ {q:"Chingizxon bosqini O'rta Osiyoga qaysi asrda bo'lib o'tgan?", o:["XIII asr","XV asr","X asr","XVIII asr"], c:0, d:"medium"},
+ {q:"Sovet davrida O'zbekiston qanday respublika deb atalgan?", o:["O'zbekiston SSR","O'zbekiston Xalq Respublikasi","Turkiston ASSR","Buxoro Respublikasi"], c:0, d:"medium"},
+ {q:"Amerika qit'asini yevropaliklar orasida birinchi bo'lib kim kashf etgan?", o:["Xristofor Kolumb","Vasko da Gama","Magellan","Marko Polo"], c:0, d:"medium"},
+ {q:"Sovuq urush davrida Sovet blokiga kirgan davlatlar qaysi harbiy ittifoqqa kirgan?", o:["Varshava shartnomasi","NATO","Yevropa Ittifoqi","BMT"], c:0, d:"hard"},
+ {q:"Qadimgi Yunonistonda demokratiya tushunchasi qaysi shaharda rivojlangan?", o:["Afina","Sparta","Rim","Iskandariya"], c:0, d:"hard"},
+ {q:"Islom dini qaysi asrda paydo bo'lgan?", o:["VII asr","V asr","X asr","III asr"], c:0, d:"hard"},
+ {q:"Birinchi jahon urushidan keyin qaysi imperiyalar tarqalib ketgan?", o:["Barchasi","Faqat Usmonli imperiyasi","Faqat Britaniya imperiyasi","Faqat Rossiya imperiyasi"], c:0, d:"hard"},
+ {q:"Sanoat inqilobi birinchi bo'lib qaysi davlatda boshlangan?", o:["Angliya","Fransiya","Germaniya","AQSH"], c:0, d:"hard"},
+]
+};
+
+// ============================= STATE =============================
+let state = {
+  step: 0,
+  user: {name:'', email:''},
+  subject: null,
+  grade: null,
+  duration: null,
+  count: null,
+  questions: [],
+  idx: 0,
+  answers: [],
+  timeLeft: 0,
+  timerId: null,
+  totalSeconds: 0,
+};
+const STEPS = ['screen-profile','screen-subject','screen-grade','screen-duration','screen-count','screen-ready'];
+
+// ============================= HELPERS =============================
+function $(id){return document.getElementById(id);}
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function gradeTier(g){ if(g<=4) return 'easy'; if(g<=8) return 'medium'; return 'hard'; }
+function gradeColor(g){ const t=gradeTier(g); return t==='easy'?'var(--green)':t==='medium'?'var(--blue)':'var(--red)'; }
+function fmtTime(sec){
+  const m = Math.floor(sec/60).toString().padStart(2,'0');
+  const s = Math.floor(sec%60).toString().padStart(2,'0');
+  return m+':'+s;
+}
+
+// ---- Math question generator ----
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function makeOptions(correct, spread){
+  const set = new Set([correct]);
+  while(set.size<4){
+    let delta = randInt(-spread,spread);
+    if(delta===0) delta = spread;
+    let val = correct+delta;
+    if(!Number.isInteger(val)) val = Math.round(val*10)/10;
+    set.add(val);
+  }
+  return shuffle(Array.from(set));
+}
+function genMathQ(grade){
+  const tier = gradeTier(grade);
+  let a,b,q,ans,spread;
+  if(tier==='easy'){
+    if(grade<=2){ a=randInt(1,10); b=randInt(1,10); const op=Math.random()<0.5?'+':'-'; if(op==='-'&&a<b){[a,b]=[b,a];} ans = op==='+'?a+b:a-b; q = `${a} ${op} ${b} = ?`; spread=5; }
+    else { a=randInt(2,10); b=randInt(2,10); const op=Math.random()<0.5?'×':'+'; ans = op==='×'?a*b:a+b; q = `${a} ${op} ${b} = ?`; spread = op==='×'?10:8; }
+  } else if(tier==='medium'){
+    if(grade<=6){ a=randInt(10,50); b=randInt(2,12); const op=['×','+','-'][randInt(0,2)]; ans = op==='×'?a*b:op==='+'?a+b:a-b; q = `${a} ${op} ${b} = ?`; spread=12; }
+    else { const percentVals=[10,20,25,50,75]; const p=percentVals[randInt(0,percentVals.length-1)]; a=randInt(20,200); ans=Math.round(a*p/100); q = `${a} sonining ${p}% qanchaga teng?`; spread=15; }
+  } else {
+    if(grade<=9){ a=randInt(2,9); b=randInt(2,12); const c=randInt(1,20); ans = a*b+c - c; q = `x ni toping: ${a}x + ${c} = ${a*b+c}`; ans=b; spread=6; }
+    else { const w=randInt(4,15), h=randInt(4,15); const shape=Math.random()<0.5?'perimeter':'area'; if(shape==='perimeter'){ ans=2*(w+h); q = `To'g'ri to'rtburchakning tomonlari ${w} sm va ${h} sm. Uning perimetri nechaga teng?`; spread=10; } else { ans=w*h; q = `To'g'ri to'rtburchakning tomonlari ${w} sm va ${h} sm. Uning yuzi nechaga teng?`; spread=20; } }
+  }
+  const options = makeOptions(ans, spread);
+  return {q, o: options.map(String), c: options.indexOf(ans), d: tier};
+}
+function shuffleOptionsKeepCorrect(question){
+  const pairs = question.o.map((opt,i)=>({opt, correct: i===question.c}));
+  const shuffled = shuffle(pairs);
+  return {q: question.q, o: shuffled.map(p=>p.opt), c: shuffled.findIndex(p=>p.correct), d: question.d};
+}
+function pickQuestions(subjectId, grade, count){
+  if(subjectId==='math'){
+    const qs=[];
+    const seen = new Set();
+    let guard=0;
+    while(qs.length<count && guard<count*20){
+      guard++;
+      const gq = genMathQ(grade);
+      const key = gq.q;
+      if(seen.has(key)) continue;
+      seen.add(key);
+      qs.push(gq);
+    }
+    return qs;
+  }
+  const tier = gradeTier(grade);
+  const bank = BANK[subjectId];
+  // Build a pool with no duplicate questions: preferred-tier first, then other tiers, each shuffled.
+  const primary = shuffle(bank.filter(q=>q.d===tier));
+  const others = shuffle(bank.filter(q=>q.d!==tier));
+  const pool = [...primary, ...others]; // pool has no repeats since it's built from the bank once
+  const selected = pool.slice(0, Math.min(count, pool.length));
+  return selected.map(shuffleOptionsKeepCorrect);
+}
+
+// ============================= INIT STATIC UI =============================
+function initSubjectStrip(){
+  $('subjectStrip').innerHTML = SUBJECTS.map(s=>`<span class="subject-pill">${s.icon} ${s.name}</span>`).join('');
+}
+function initSubjectCards(){
+  $('subjectCards').innerHTML = SUBJECTS.map(s=>`
+    <div class="opt-card" data-subject="${s.id}" style="--sel:${s.color}">
+      <div class="opt-icon">${s.icon}</div>
+      <div class="opt-label">${s.name}</div>
+    </div>`).join('');
+  $('subjectCards').querySelectorAll('.opt-card').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      $('subjectCards').querySelectorAll('.opt-card').forEach(x=>x.classList.remove('selected'));
+      el.classList.add('selected');
+      state.subject = el.dataset.subject;
+      $('btnSubjectNext').disabled = false;
+    });
+  });
+}
+function initGradeGrid(){
+  let html='';
+  for(let g=1; g<=11; g++){
+    html += `<div class="grade-cell" data-grade="${g}" style="--sel:${gradeColor(g)}">${g}</div>`;
+  }
+  $('gradeGrid').innerHTML = html;
+  $('gradeGrid').querySelectorAll('.grade-cell').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      $('gradeGrid').querySelectorAll('.grade-cell').forEach(x=>{x.classList.remove('selected'); x.style.background=''; x.style.borderColor='';});
+      const g = parseInt(el.dataset.grade);
+      el.classList.add('selected');
+      el.style.background = gradeColor(g);
+      el.style.borderColor = gradeColor(g);
+      state.grade = g;
+      $('btnGradeNext').disabled = false;
+    });
+  });
+}
+function initDurationChips(){
+  $('durationChips').innerHTML = DURATIONS.map(d=>{
+    const label = d<60 ? `${d} daq` : (d===60?`1 soat`:`1 soat ${d-60} daq`);
+    return `<div class="chip" data-dur="${d}">${label}</div>`;
+  }).join('');
+  $('durationChips').querySelectorAll('.chip').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      $('durationChips').querySelectorAll('.chip').forEach(x=>x.classList.remove('selected'));
+      el.classList.add('selected');
+      state.duration = parseInt(el.dataset.dur);
+      $('btnDurationNext').disabled = false;
+    });
+  });
+}
+function initCountChips(){
+  $('countChips').innerHTML = COUNTS.map(c=>`<div class="chip" data-count="${c}">${c} ta</div>`).join('');
+  $('countChips').querySelectorAll('.chip').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      $('countChips').querySelectorAll('.chip').forEach(x=>x.classList.remove('selected'));
+      el.classList.add('selected');
+      state.count = parseInt(el.dataset.count);
+      $('btnCountNext').disabled = false;
+    });
+  });
+}
+function buildStepper(){
+  $('stepper').innerHTML = STEPS.map((s,i)=>`<div class="step-dot" data-i="${i}"></div>`).join('');
+}
+function updateStepper(activeIndex){
+  $('stepper').classList.remove('hidden');
+  $('stepper').querySelectorAll('.step-dot').forEach((el,i)=>{
+    el.classList.remove('active','done');
+    if(i<activeIndex) el.classList.add('done');
+    if(i===activeIndex) el.classList.add('active');
+  });
+}
+
+// ============================= NAVIGATION =============================
+function goToScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  const stepIdx = STEPS.indexOf(id);
+  if(stepIdx>=0) updateStepper(stepIdx);
+  else $('stepper').classList.add('hidden');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('[data-back]').forEach(btn=>{
+  btn.addEventListener('click', ()=>goToScreen(btn.dataset.back));
+});
+
+// ============================= GOOGLE SIGN-IN (REAL, via Google Identity Services) =============================
+// 1) Google Cloud Console'da OAuth 2.0 Client ID yarating (https://console.cloud.google.com/apis/credentials)
+// 2) "Authorized JavaScript origins"ga ushbu sayt joylashgan aniq domenni qo'shing (masalan https://sizning-saytingiz.com)
+// 3) Olingan Client ID ni pastdagi qatorga qo'ying:
+const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+
+function decodeJwt(token){
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g,'+').replace(/_/g,'/');
+  const jsonPayload = decodeURIComponent(atob(base64).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+  return JSON.parse(jsonPayload);
+}
+function handleGoogleCredentialResponse(response){
+  const data = decodeJwt(response.credential);
+  const name = data.name || [data.given_name,data.family_name].filter(Boolean).join(' ') || 'Foydalanuvchi';
+  completeLogin(name, data.email || '');
+}
+function initGoogleSignIn(){
+  const configured = GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.startsWith('YOUR_');
+  if(!configured || typeof google === 'undefined' || !google.accounts){
+    $('gsiSetupNotice').style.display = 'block';
+    return;
+  }
+  try{
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredentialResponse,
+    });
+    google.accounts.id.renderButton($('gsiButtonContainer'), {
+      theme:'filled_black', size:'large', shape:'pill', text:'signin_with', width:300
+    });
+    $('gsiReadyNotice').style.display = 'block';
+  }catch(e){
+    console.error('Google Sign-In init xatosi:', e);
+    $('gsiSetupNotice').style.display = 'block';
+  }
+}
+window.addEventListener('load', ()=> setTimeout(initGoogleSignIn, 300));
+
+// Demo fallback (faqat Client ID sozlanmagan paytda ko'rinadi, sinov uchun)
+const demoAccounts = [
+  {name:'Sardor Karimov', email:'sardor.karimov@gmail.com'},
+];
+function initGoogleModal(){
+  $('gAccList').innerHTML = demoAccounts.map(a=>`
+    <div class="gacc" data-name="${a.name}" data-email="${a.email}">
+      <div class="gavatar">${a.name[0]}</div>
+      <div><div class="gname">${a.name}</div><div class="gmail">${a.email}</div></div>
+    </div>`).join('');
+  $('gAccList').querySelectorAll('.gacc').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      completeLogin(el.dataset.name, el.dataset.email);
+    });
+  });
+}
+const demoLoginLinkEl = $('demoLoginLink');
+if(demoLoginLinkEl){
+  demoLoginLinkEl.addEventListener('click', ()=> $('googleModal').classList.add('show'));
+}
+$('gAddAccountBtn').addEventListener('click', ()=>{
+  $('gAddForm').style.display='block';
+  $('gAddAccountBtn').style.display='none';
+});
+$('gConfirmBtn').addEventListener('click', ()=>{
+  const name = $('gNameInput').value.trim() || 'Mehmon';
+  const email = $('gEmailInput').value.trim() || 'user@gmail.com';
+  completeLogin(name, email);
+});
+function completeLogin(name, email){
+  state.user.name = name;
+  state.user.email = email;
+  $('googleModal').classList.remove('show');
+  $('userChip').classList.add('show');
+  $('userAvatar').textContent = name[0].toUpperCase();
+  $('userChipName').textContent = name;
+  const parts = name.split(' ');
+  $('inputIsm').value = parts[0]||'';
+  $('inputFamiliya').value = parts.slice(1).join(' ')||'';
+  checkProfileValid();
+  goToScreen('screen-profile');
+}
+
+// ============================= PROFILE STEP =============================
+function checkProfileValid(){
+  const ok = $('inputIsm').value.trim().length>0 && $('inputFamiliya').value.trim().length>0;
+  $('btnProfileNext').disabled = !ok;
+}
+$('inputIsm').addEventListener('input', checkProfileValid);
+$('inputFamiliya').addEventListener('input', checkProfileValid);
+$('btnProfileNext').addEventListener('click', ()=>{
+  state.user.name = $('inputIsm').value.trim();
+  state.user.surname = $('inputFamiliya').value.trim();
+  $('userChipName').textContent = state.user.name+' '+state.user.surname;
+  $('userAvatar').textContent = state.user.name[0].toUpperCase();
+  goToScreen('screen-subject');
+});
+$('btnSubjectNext').addEventListener('click', ()=>goToScreen('screen-grade'));
+$('btnGradeNext').addEventListener('click', ()=>goToScreen('screen-duration'));
+$('btnDurationNext').addEventListener('click', ()=>goToScreen('screen-count'));
+$('btnCountNext').addEventListener('click', ()=>{
+  buildSummary();
+  goToScreen('screen-ready');
+});
+
+function buildSummary(){
+  const subj = SUBJECTS.find(s=>s.id===state.subject);
+  const durLabel = state.duration<60 ? `${state.duration} daqiqa` : (state.duration===60?'1 soat':`1 soat ${state.duration-60} daqiqa`);
+  $('readyTitle').textContent = `${state.user.name}, testga tayyormisiz?`;
+  $('summaryGrid').innerHTML = `
+    <div class="sum-item"><div class="sum-label">Fan</div><div class="sum-value">${subj.icon} ${subj.name}</div></div>
+    <div class="sum-item"><div class="sum-label">Sinf</div><div class="sum-value">${state.grade}-sinf</div></div>
+    <div class="sum-item"><div class="sum-label">Vaqt</div><div class="sum-value">${durLabel}</div></div>
+    <div class="sum-item"><div class="sum-label">Savollar soni</div><div class="sum-value">${state.count} ta</div></div>
+  `;
+}
+
+// ============================= QUIZ =============================
+$('btnStartQuiz').addEventListener('click', startQuiz);
+function startQuiz(){
+  state.questions = pickQuestions(state.subject, state.grade, state.count);
+  state.idx = 0;
+  state.answers = new Array(state.questions.length).fill(null);
+  state.totalSeconds = state.duration*60;
+  state.timeLeft = state.totalSeconds;
+  goToScreen('screen-quiz');
+  renderQuestion();
+  startTimer();
+}
+function startTimer(){
+  clearInterval(state.timerId);
+  updateTimerDisplay();
+  state.timerId = setInterval(()=>{
+    state.timeLeft--;
+    updateTimerDisplay();
+    if(state.timeLeft<=0){
+      clearInterval(state.timerId);
+      finishQuiz();
+    }
+  },1000);
+}
+function updateTimerDisplay(){
+  $('timerText').textContent = fmtTime(Math.max(0,state.timeLeft));
+  $('timerBox').classList.toggle('low', state.timeLeft<=30);
+}
+function renderQuestion(){
+  const q = state.questions[state.idx];
+  const subj = SUBJECTS.find(s=>s.id===state.subject);
+  $('quizProgressText').textContent = `Savol ${state.idx+1} / ${state.questions.length}`;
+  $('progressFill').style.width = ((state.idx)/state.questions.length*100)+'%';
+  const letters = ['A','B','C','D'];
+  $('questionCard').innerHTML = `
+    <div class="q-tag" style="--sel:${subj.color}">${subj.name} · ${state.grade}-sinf</div>
+    <div class="q-text">${q.q}</div>
+    <div class="q-options">
+      ${q.o.map((opt,i)=>`
+        <div class="q-opt ${state.answers[state.idx]===i?'chosen':''}" data-i="${i}">
+          <div class="q-letter">${letters[i]}</div><div>${opt}</div>
+        </div>`).join('')}
+    </div>
+  `;
+  $('questionCard').querySelectorAll('.q-opt').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.answers[state.idx] = parseInt(el.dataset.i);
+      renderQuestion();
+    });
+  });
+  $('btnPrevQ').disabled = state.idx===0;
+  $('btnNextQ').textContent = state.idx===state.questions.length-1 ? "Testni yakunlash ✓" : "Keyingi →";
+  $('btnNextQ').disabled = state.answers[state.idx]===null;
+}
+$('btnPrevQ').addEventListener('click', ()=>{
+  if(state.idx>0){ state.idx--; renderQuestion(); }
+});
+$('btnNextQ').addEventListener('click', ()=>{
+  if(state.idx<state.questions.length-1){
+    state.idx++;
+    renderQuestion();
+  } else {
+    finishQuiz();
+  }
+});
+
+// ============================= RESULTS =============================
+function finishQuiz(){
+  clearInterval(state.timerId);
+  const total = state.questions.length;
+  let correct = 0;
+  state.questions.forEach((q,i)=>{ if(state.answers[i]===q.c) correct++; });
+  const wrong = total-correct;
+  const pct = Math.round((correct/total)*100);
+  const timeSpent = state.totalSeconds - Math.max(0,state.timeLeft);
+
+  $('statCorrect').textContent = correct;
+  $('statWrong').textContent = wrong;
+  $('statTime').textContent = fmtTime(timeSpent);
+  $('donutPct').textContent = pct+'%';
+
+  const circumference = 2*Math.PI*52;
+  const offset = circumference - (pct/100)*circumference;
+  const fg = $('donutFg');
+  fg.setAttribute('stroke-dasharray', circumference.toFixed(1));
+  fg.setAttribute('stroke-dashoffset', circumference.toFixed(1));
+  let color = 'var(--gold)';
+  if(pct>=90) color='var(--green)'; else if(pct>=70) color='var(--gold)'; else if(pct>=50) color='var(--blue)'; else color='var(--red)';
+  fg.setAttribute('stroke', color);
+  setTimeout(()=>{ fg.setAttribute('stroke-dashoffset', offset.toFixed(1)); }, 100);
+
+  let msg, sub;
+  if(pct>=90){ msg="Zo'r natija! 🎉"; sub="Siz bu mavzuni juda yaxshi bilasiz. Shunday davom eting!"; }
+  else if(pct>=70){ msg="Ajoyib harakat! 👏"; sub="Yaxshi natija ko'rsatdingiz, biroz ko'proq mashq qilsangiz a'lo bo'ladi."; }
+  else if(pct>=50){ msg="Yomon emas! 💪"; sub="Ba'zi mavzularni yana bir bor takrorlab chiqing — natijangiz albatta yaxshilanadi."; }
+  else { msg="Xavotir olmang! 🌱"; sub="Bu shunchaki boshlanish. Mavzuni qayta ko'rib chiqib, yana urinib ko'ring — albatta uddalaysiz."; }
+  $('resultMsg').textContent = `${state.user.name}, ${msg}`;
+  $('resultSub').textContent = sub;
+
+  const letters=['A','B','C','D'];
+  $('reviewList').innerHTML = state.questions.map((q,i)=>{
+    const userAns = state.answers[i];
+    const isRight = userAns===q.c;
+    return `<div class="review-item ${isRight?'right':'wrong'}">
+      <div class="review-q">${i+1}. ${q.q}</div>
+      <div class="review-ans">
+        Sizning javobingiz: <b class="${isRight?'ok':'no'}">${userAns!==null ? letters[userAns]+') '+q.o[userAns] : 'Javob berilmagan'}</b>
+        ${!isRight ? `<br>To'g'ri javob: <b class="ok">${letters[q.c]}) ${q.o[q.c]}</b>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  goToScreen('screen-results');
+}
+$('btnRetrySame').addEventListener('click', startQuiz);
+$('btnNewTest').addEventListener('click', ()=>{
+  goToScreen('screen-subject');
+});
+
+// ============================= INIT =============================
+initSubjectStrip();
+initSubjectCards();
+initGradeGrid();
+initDurationChips();
+initCountChips();
+buildStepper();
+initGoogleModal();
+</script>
+</body>
+</html>
